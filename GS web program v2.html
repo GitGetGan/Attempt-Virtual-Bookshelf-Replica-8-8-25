@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+  <!-- Swiper CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/swiper@9/swiper-bundle.min.css"/>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1e1e1e;
+      font-family: 'Quicksand', sans-serif;
+      color: #f0f0f0;
+    }
+
+    #shelfSelect {
+      margin: 20px;
+      padding: 10px 20px;
+      font-size: 1rem;
+      background-color: #ffe4f0;
+      color: #333;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Quicksand', sans-serif;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    #shelfSelect:hover {
+      background-color: #ffd0e8;
+    }
+
+    .swiper {
+      width: 90%;
+      height: auto;
+      padding: 40px 0;
+      margin: 0 auto;
+    }
+
+    .swiper-slide {
+      background: #2e2e2e;
+      border-radius: 12px;
+      text-align: center;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
+      padding: 20px;
+    }
+
+    .swiper-slide img {
+      width: 100%;
+      max-height: 400px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .swiper-slide p {
+      margin-top: 10px;
+      font-size: 1rem;
+      color: #f8f8f8;
+    }
+
+    .swiper-button-next,
+    .swiper-button-prev {
+      color: #ffe4f0;
+    }
+
+    .swiper-button-next:hover,
+    .swiper-button-prev:hover {
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+  <select id="shelfSelect"></select>
+
+  <div class="swiper">
+    <div class="swiper-wrapper" id="slides"></div>
+    <div class="swiper-button-prev"></div>
+    <div class="swiper-button-next"></div>
+  </div>
+
+  <!-- Swiper JS -->
+  <script src="https://unpkg.com/swiper@9/swiper-bundle.min.js"></script>
+
+  <script>
+    async function init() {
+      const resp = await fetch('https://script.google.com/macros/s/AKfycbxSB9XqE1I8w1KVfeSUmNPGWisZ6BfqYd_NT_7OxNnkyO-NmOkgqSvii2bPnLjSQNx-qA/exec'); // Replace with your actual script URL
+      const data = await resp.json();
+
+      const sel = document.getElementById('shelfSelect');
+      sel.innerHTML = ''; // Clear dropdown
+
+      data.forEach(s => {
+        const o = document.createElement('option');
+        o.value = s.shelf;
+        o.text = s.shelf;
+        sel.append(o);
+      });
+
+      sel.onchange = () => renderSlides(data.find(s => s.shelf === sel.value)?.items || []);
+      sel.onchange();
+    }
+
+    let swiper;
+
+    function renderSlides(items) {
+    const container = document.getElementById('slides');
+    container.innerHTML = '';
+
+    // Add real book slides
+    items.forEach(i => {
+        const slide = document.createElement('div');
+        slide.className = 'swiper-slide';
+        slide.innerHTML = `
+        <img src="${i.cover}" alt="Book cover">
+        <p>${i.title}</p>
+        `;
+        container.appendChild(slide);
+    });
+
+    // 🔻 Add 6 placeholder slides
+    for (let i = 0; i < 6; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'swiper-slide';
+        placeholder.innerHTML = `
+        <div style="width:100%;height:400px;background-color:#444;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;">
+            Placeholder
+        </div>
+        <p>Coming Soon</p>
+        `;
+        container.appendChild(placeholder);
+    }
+
+    if (swiper) swiper.destroy(true, true);
+
+    swiper = new Swiper('.swiper', {
+        loop: false,
+        slidesPerView: 1,
+        spaceBetween: 20,
+        navigation: {
+        nextEl: '.swiper-button-next',
+        prevEl: '.swiper-button-prev'
+        },
+        breakpoints: {
+        640: {
+            slidesPerView: 2,
+            spaceBetween: 30,
+        },
+        1024: {
+            slidesPerView: 3,
+            spaceBetween: 40,
+        }
+        }
+    });
+    }
+
+
+    init();
+  </script>
+</body>
+</html>
