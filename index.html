@@ -3,165 +3,175 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-
   <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://unpkg.com/swiper@9/swiper-bundle.min.css"/>
-
-  <!-- Google Fonts -->
+  <!-- Google font -->
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
-
   <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #1e1e1e;
-      font-family: 'Quicksand', sans-serif;
-      color: #f0f0f0;
-    }
-
-    #shelfSelect {
-      margin: 20px;
-      padding: 10px 20px;
-      font-size: 1rem;
-      background-color: #ffe4f0;
-      color: #333;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Quicksand', sans-serif;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-      cursor: pointer;
-      transition: background-color 0.3s;
-    }
-
-    #shelfSelect:hover {
-      background-color: #ffd0e8;
-    }
-
-    .swiper {
-      width: 90%;
-      height: auto;
-      padding: 40px 0;
-      margin: 0 auto;
-    }
-
-    .swiper-slide {
-      background: #2e2e2e;
-      border-radius: 12px;
-      text-align: center;
-      box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-      padding: 20px;
-    }
-
-    .swiper-slide img {
-      width: 100%;
-      max-height: 400px;
-      object-fit: contain;
-      border-radius: 8px;
-    }
-
-    .swiper-slide p {
-      margin-top: 10px;
-      font-size: 1rem;
-      color: #f8f8f8;
-    }
-
-    .swiper-button-next,
-    .swiper-button-prev {
-      color: #ffe4f0;
-    }
-
-    .swiper-button-next:hover,
-    .swiper-button-prev:hover {
-      color: #ffffff;
-    }
+    /* ... (same styles as your Version 2) */
+    body { margin:0; padding:0; background:#1e1e1e; font-family:'Quicksand',sans-serif; color:#f0f0f0; }
+    #shelfSelect { margin:20px; padding:10px 20px; font-size:1rem; background:#ffe4f0; color:#333; border:none; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer; transition:background-color .3s;}
+    #shelfSelect:hover { background:#ffd0e8; }
+    .swiper { width:90%; height:auto; padding:40px 0; margin:0 auto; }
+    .swiper-slide { background:#2e2e2e; border-radius:12px; text-align:center; box-shadow:0 6px 12px rgba(0,0,0,.4); padding:20px; }
+    .swiper-slide img { width:100%; max-height:400px; object-fit:contain; border-radius:8px; }
+    .swiper-slide p { margin-top:10px; font-size:1rem; color:#f8f8f8; }
+    .swiper-button-next, .swiper-button-prev { color:#ffe4f0; }
+    .swiper-button-next:hover, .swiper-button-prev:hover { color:#fff; }
   </style>
 </head>
 <body>
-
-  <select id="shelfSelect"></select>
+  <select id="shelfSelect" aria-label="Select shelf"></select>
 
   <div class="swiper">
     <div class="swiper-wrapper" id="slides"></div>
-    <div class="swiper-button-prev"></div>
-    <div class="swiper-button-next"></div>
+    <div class="swiper-button-prev" aria-label="Previous"></div>
+    <div class="swiper-button-next" aria-label="Next"></div>
+    <div class="swiper-scrollbar"></div>
   </div>
 
-  <!-- Swiper JS -->
+  <!-- Swiper + CryptoJS (make sure this BootCDN link works for you) -->
   <script src="https://unpkg.com/swiper@9/swiper-bundle.min.js"></script>
+  <!--if decryption with right password fails, check if the link below is still valid-->
+  <script src="https://cdn.bootcdn.net/ajax/libs/crypto-js/4.2.0/crypto-js.js"></script>
 
   <script>
+    // global swiper instance
+    let swiperInstance = null;
+
+    // decryption program on recieved data from app script
     async function init() {
-      const resp = await fetch('https://script.google.com/macros/s/AKfycbxSB9XqE1I8w1KVfeSUmNPGWisZ6BfqYd_NT_7OxNnkyO-NmOkgqSvii2bPnLjSQNx-qA/exec'); // Replace with your actual script URL
-      const data = await resp.json();
+      // ask for password (empty => assume server returns plain JSON)
+      const password = prompt("Enter decryption password:");
 
+      const endpoint = 'https://script.google.com/macros/s/AKfycbxSB9XqE1I8w1KVfeSUmNPGWisZ6BfqYd_NT_7OxNnkyO-NmOkgqSvii2bPnLjSQNx-qA/exec';
+      const resp = await fetch(endpoint + (password ? '?password=' + encodeURIComponent(password) : ''));
+
+      if (!resp.ok) { alert('Failed to fetch data: ' + resp.statusText); return; }
+
+      const text = (await resp.text()).trim();
+
+      let data = null;
+      // Try to parse plain JSON first (server fallback)
+      try {
+        if (text.startsWith('{') || text.startsWith('[')) data = JSON.parse(text);
+        else throw new Error('Not JSON');
+      } catch (e) {
+        // Attempt CryptoJS AES decrypt if text is ciphertext
+        if (!password) { alert('Server response appears encrypted; reload and provide password.'); return; }
+        try {
+          const bytes = CryptoJS.AES.decrypt(text, password);
+          const plain = bytes.toString(CryptoJS.enc.Utf8);
+          if (!plain) throw new Error('Empty plaintext after decrypt (bad password?)');
+          data = JSON.parse(plain);
+        } catch (err) {
+          console.error('Decrypt/parse error', err);
+          alert('Failed to decrypt or parse. Check password and that the server used CryptoJS/OpenSSL salted AES.');
+          return;
+        }
+      }
+
+      if (!Array.isArray(data)) {
+        alert('Decrypted data is not the expected array.');
+        console.error('Unexpected data:', data);
+        return;
+      }
+
+      populateShelves(data);
+    }
+
+    function populateShelves(shelves) {
       const sel = document.getElementById('shelfSelect');
-      sel.innerHTML = ''; // Clear dropdown
+      sel.innerHTML = '';
 
-      data.forEach(s => {
+      if (shelves.length === 0) {
+        const opt = document.createElement('option');
+        opt.text = 'No shelves found';
+        opt.value = '';
+        sel.appendChild(opt);
+        renderSlides([]); // will show only placeholders
+        return;
+      }
+
+      // use index values for options (consistent with V2)
+      shelves.forEach((s, idx) => {
         const o = document.createElement('option');
-        o.value = s.shelf;
-        o.text = s.shelf;
-        sel.append(o);
+        o.value = String(idx);
+        o.text = s.shelf || `Shelf ${idx+1}`;
+        sel.appendChild(o);
       });
 
-      sel.onchange = () => renderSlides(data.find(s => s.shelf === sel.value)?.items || []);
+      sel.onchange = () => {
+        const idx = Number(sel.value);
+        const items = (shelves[idx] && Array.isArray(shelves[idx].items)) ? shelves[idx].items : [];
+        renderSlides(items);
+      };
+
+      sel.selectedIndex = 0;
       sel.onchange();
     }
 
-    let swiper;
-
     function renderSlides(items) {
-    const container = document.getElementById('slides');
-    container.innerHTML = '';
+      const container = document.getElementById('slides');
+      container.innerHTML = '';
 
-    // Add real book slides
-    items.forEach(i => {
+      // Add real book slides first
+      items.forEach(i => {
         const slide = document.createElement('div');
         slide.className = 'swiper-slide';
-        slide.innerHTML = `
-        <img src="${i.cover}" alt="Book cover">
-        <p>${i.title}</p>
-        `;
-        container.appendChild(slide);
-    });
 
-    // 🔻 Add 6 placeholder slides
-    for (let i = 0; i < 6; i++) {
+        const img = document.createElement('img');
+        img.src = i.cover ? i.cover : 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
+        img.alt = i.title ? `Cover: ${i.title}` : 'Cover image';
+        img.loading = 'lazy';
+
+        const p = document.createElement('p');
+        p.textContent = i.title || '';
+
+        slide.appendChild(img);
+        slide.appendChild(p);
+        container.appendChild(slide);
+      });
+
+
+       // number of placeholder slides to append (same visual behavior as V1)
+      const PLACEHOLDER_COUNT = 6;
+      // Re-introduce placeholders (same visual purpose as V1)
+      for (let p = 0; p < PLACEHOLDER_COUNT; p++) {
         const placeholder = document.createElement('div');
         placeholder.className = 'swiper-slide';
         placeholder.innerHTML = `
-        <div style="width:100%;height:400px;background-color:#444;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;">
+          <div style="width:100%;height:400px;background-color:#444;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#aaa;">
             Placeholder
-        </div>
-        <p>Coming Soon</p>
+          </div>
+          <p>Coming Soon</p>
         `;
         container.appendChild(placeholder);
-    }
+      }
 
-    if (swiper) swiper.destroy(true, true);
+      // Destroy existing swiper instance (if any) to avoid multiple instances
+      if (swiperInstance) {
+        try { swiperInstance.destroy(true, true); } catch (e) { console.warn('destroy failed', e); }
+        swiperInstance = null;
+      }
 
-    swiper = new Swiper('.swiper', {
+      // Initialize Swiper and restore the responsive breakpoints from V1
+      swiperInstance = new Swiper('.swiper', {
         loop: false,
         slidesPerView: 1,
         spaceBetween: 20,
         navigation: {
-        nextEl: '.swiper-button-next',
-        prevEl: '.swiper-button-prev'
+          nextEl: '.swiper-button-next',
+          prevEl: '.swiper-button-prev'
         },
         breakpoints: {
-        640: {
-            slidesPerView: 2,
-            spaceBetween: 30,
-        },
-        1024: {
-            slidesPerView: 3,
-            spaceBetween: 40,
+          640: { slidesPerView: 2, spaceBetween: 30 },
+          1024: { slidesPerView: 3, spaceBetween: 40 }
         }
-        }
-    });
+      });
     }
 
-
+    // kick off
     init();
   </script>
 </body>
