@@ -40,18 +40,20 @@
       position: fixed;
       top: 0;
       right: 0;
-      height: 100vh;
-      width: 340px;
+      bottom: 0;               /* <- important: stretch to actual viewport bottom */
+      width: 350px;
       max-width: 85%;
+      /* don't use height:100vh; instead let the browser calculate using top/bottom */
       background: linear-gradient(180deg,#1f1f2a,#15151a);
       box-shadow: -30px 0 60px rgba(0,0,0,0.6);
-      transform: translateX(110%); /* hidden by default off-screen */
+      transform: translateX(110%);
       transition: transform .32s cubic-bezier(.2,.9,.2,1);
-      z-index: 1100;
-      padding: 20px;
+      z-index: 1100;           /* ensure menu stays above overlay */
+      padding: calc(20px + env(safe-area-inset-top, 0px)) 20px calc(20px + env(safe-area-inset-bottom, 12px));
       display: flex;
       flex-direction: column;
       gap: 16px;
+      box-sizing: border-box;
     }
     #slideMenu.open { transform: translateX(0); }
 
@@ -68,23 +70,6 @@
     #menuOverlay.visible { opacity: 1; pointer-events: auto; }
 
     /* ===== menu content scroll + pinned bottom checkbox ===== */
-    #slideMenu {
-    position: fixed;
-    top: 0;
-    right: 0;
-    height: 100vh;
-    width: 340px;
-    max-width: 85%;
-    background: linear-gradient(180deg,#1f1f2a,#15151a);
-    box-shadow: -30px 0 60px rgba(0,0,0,0.6);
-    transform: translateX(110%);
-    transition: transform .32s cubic-bezier(.2,.9,.2,1);
-    z-index: 1100;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    }
 
     /* header stays at top, bottom area pinned, middle grid scrolls */
     .menu-header { color:#ffe4f0; font-weight:700; font-size:1.05rem; display:flex; align-items:center; justify-content:space-between; }
@@ -97,8 +82,8 @@
     grid-template-rows: 94px 94px 94px;      /* 3 rows (small so all fits on viewport) */
     gap: 10px;
     /* no scrolling: the grid is sized to fit inside the menu */
-    flex: 1 0 auto;
-    min-height: 0;
+    flex: 1 1 auto; /* take remaining vertical space between header & bottom */
+    min-height: 0; /* allows flex child to properly shrink on mobile */
     overflow: visible;
     align-items: stretch;
     padding-right: 6px;
@@ -174,8 +159,9 @@
     justify-content:space-between;
     gap:8px;
     padding-top:6px;
-    padding-bottom:40px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 40px));
     border-top: 1px solid rgba(255,255,255,0.02);
+    box-sizing: border-box;
     }
 
     /* Slight responsive shrink */
@@ -637,6 +623,72 @@
 
     // Kick off data fetch & UI build
     init();
+  </script>
+  <script>
+    /* ===== Robust page-scroll blocking with whitelist support ===== */
+
+    /* CSS-safe fallback: still hide scrollbars */
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+
+    /* Set of selectors that should still accept touch/wheel gestures.
+      Add classes/IDs here (or use element.classList.add('allow-touch') below). */
+    const ALLOW_SELECTOR = ['.allow-touch']; // elements matching these will be allowed
+
+    // helper: returns true if event target is inside an allowed element
+    function isTouchAllowed(event) {
+      try {
+        const tgt = event.target;
+        for (let sel of ALLOW_SELECTOR) {
+          if (tgt.closest && tgt.closest(sel)) return true;
+        }
+      } catch (e) {}
+      return false;
+    }
+
+    let _scrollBlockEnabled = true;
+
+    // non-passive listener so we can call preventDefault on iOS
+    function onTouchMove(e) {
+      if (isTouchAllowed(e)) return; // allow when inside whitelisted area
+      e.preventDefault();
+    }
+
+    function onWheel(e) {
+      if (isTouchAllowed(e)) return; // allow wheel when inside whitelisted area
+      // Prevent wheel scrolling on desktop
+      e.preventDefault();
+    }
+
+    // call to enable the blocking behavior
+    function disableScrolling() {
+      if (_scrollBlockEnabled) return;
+      window.addEventListener('touchmove', onTouchMove, {passive: false});
+      window.addEventListener('wheel', onWheel, {passive: false});
+      // Keep CSS overflow hidden
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+      _scrollBlockEnabled = true;
+    }
+
+    // call to disable the blocking behavior
+    function enableScrolling() {
+      if (!_scrollBlockEnabled) return;
+      window.removeEventListener('touchmove', onTouchMove, {passive: false});
+      window.removeEventListener('wheel', onWheel, {passive: false});
+      // Reset CSS overflow (let browser choose)
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      _scrollBlockEnabled = false;
+    }
+
+    // initialize (start with scrolling disabled)
+    (function initScrollBlock(){
+      // if you want to allow Swiper touch interactions, add its container selector to ALLOW_SELECTOR:
+      // e.g. ALLOW_SELECTOR.push('.swiper'); or add class 'allow-touch' to the swiper container element.
+      window.addEventListener('touchmove', onTouchMove, {passive: false});
+      window.addEventListener('wheel', onWheel, {passive: false});
+    })();
   </script>
 </body>
 </html>
