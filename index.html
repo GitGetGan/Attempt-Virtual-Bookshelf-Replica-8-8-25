@@ -3,21 +3,211 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <!-- Swiper CSS -->
   <link rel="stylesheet" href="https://unpkg.com/swiper@9/swiper-bundle.min.css"/>
-  <!-- Google font -->
   <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
   <style>
-    /* ... (same styles as your Version 2) */
     body { margin:0; padding:0; background:#1e1e1e; font-family:'Quicksand',sans-serif; color:#f0f0f0; }
-    #shelfSelect { margin:20px; padding:10px 20px; font-size:1rem; background:#ffe4f0; color:#333; border:none; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer; transition:background-color .3s;}
-    #shelfSelect:hover { background:#ffd0e8; }
-    .swiper { width:90%; height:auto; padding:40px 0; margin:0 auto; }
+    #shelfSelect { margin:20px; padding:10px 20px; font-size:1rem; background:#ffe4f0; color:#7a7fc5; border:none; border-radius:8px; box-shadow:0 4px 10px rgba(0,0,0,0.3); cursor:pointer; transition:background-color .3s;}
+    #shelfSelect:hover { background:#ffd6e8; }
+    .swiper { width:90%; height:auto; padding:10px 0; margin:0 auto; }
     .swiper-slide { background:#2e2e2e; border-radius:12px; text-align:center; box-shadow:0 6px 12px rgba(0,0,0,.4); padding:20px; }
     .swiper-slide img { width:100%; max-height:400px; object-fit:contain; border-radius:8px; }
     .swiper-slide p { margin-top:10px; font-size:1rem; color:#f8f8f8; }
     .swiper-button-next, .swiper-button-prev { color:#ffe4f0; }
     .swiper-button-next:hover, .swiper-button-prev:hover { color:#fff; }
+    .swiper-scrollbar{bottom: 0; height: 10px;}
+    .swiper-scrollbar-drag{background: none;}
+    .swiper-scrollbar-drag:after{content: ""; width: 10px; height: 10px; border-radius: 50%; background: #ffe4f0; position: absolute; top: 0; left: 50%; margin: 0 0 0 -20px;}
+
+    /* ---- Slide-in menu styles ---- */
+    #menuToggle {
+      position: fixed;
+      top: 14px;
+      right: 14px;
+      z-index: 1200;
+      background: #ffe4f0;
+      color: #7a7fc5;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 12px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+      cursor: pointer;
+      font-weight:600;
+    }
+    #menuToggle:hover { background:#ffd6e8; }
+
+    #slideMenu {
+      position: fixed;
+      top: 0;
+      right: 0;
+      height: 100vh;
+      width: 340px;
+      max-width: 85%;
+      background: linear-gradient(180deg,#1f1f2a,#15151a);
+      box-shadow: -30px 0 60px rgba(0,0,0,0.6);
+      transform: translateX(110%); /* hidden by default off-screen */
+      transition: transform .32s cubic-bezier(.2,.9,.2,1);
+      z-index: 1100;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #slideMenu.open { transform: translateX(0); }
+
+    /* Optional dim overlay when menu open (click to close) */
+    #menuOverlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .25s;
+      z-index: 1050;
+    }
+    #menuOverlay.visible { opacity: 1; pointer-events: auto; }
+
+    /* ===== menu content scroll + pinned bottom checkbox ===== */
+    #slideMenu {
+    position: fixed;
+    top: 0;
+    right: 0;
+    height: 100vh;
+    width: 340px;
+    max-width: 85%;
+    background: linear-gradient(180deg,#1f1f2a,#15151a);
+    box-shadow: -30px 0 60px rgba(0,0,0,0.6);
+    transform: translateX(110%);
+    transition: transform .32s cubic-bezier(.2,.9,.2,1);
+    z-index: 1100;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    }
+
+    /* header stays at top, bottom area pinned, middle grid scrolls */
+    .menu-header { color:#ffe4f0; font-weight:700; font-size:1.05rem; display:flex; align-items:center; justify-content:space-between; }
+ 
+    /* ---------- MENU GRID: fixed 2x3 layout, no scroll ---------- */
+    /* main slide menu already defined earlier; this CSS assumes #slideMenu is a column flex container */
+    .menu-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;          /* 2 columns */
+    grid-template-rows: 94px 94px 94px;      /* 3 rows (small so all fits on viewport) */
+    gap: 10px;
+    /* no scrolling: the grid is sized to fit inside the menu */
+    flex: 1 0 auto;
+    min-height: 0;
+    overflow: visible;
+    align-items: stretch;
+    padding-right: 6px;
+    }
+
+    /* grid cell that may contain nested splits */
+    /* ensure a .menu-btn placed directly inside a grid-cell fills the entire cell */
+    .grid-cell {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    display: block; /* keep split containers working */
+    }
+
+    /* Force direct-child buttons to fill the cell */
+    .grid-cell > .menu-btn {
+    width: 100%;
+    height: 100%;
+    align-items: center;        /* keep label centered */
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 12px;              /* tweak if you want smaller padding */
+    }
+
+
+    /* nested split containers */
+    .split-vertical { display: grid; grid-template-columns: 1fr 1fr; gap:8px; height:100%; }
+    .split-horizontal { display: grid; grid-template-rows: 1fr 1fr; gap:8px; height:100%; }
+
+    /* button base — small compact style */
+    .menu-btn {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size: 0.86rem;     /* smaller text */
+    padding:10px;
+    border-radius:10px;
+    border: 1px solid rgba(255,255,255,0.04);
+    background: linear-gradient(180deg,#2b2b3a,#23232b);
+    color:#ffe4f0;
+    cursor:pointer;
+    user-select:none;
+    line-height:1.05;
+    min-height: 0;
+    box-shadow: 0 6px 14px rgba(0,0,0,0.35);
+    word-break: break-word;
+    }
+
+    /* disabled look */
+    .menu-btn.disabled, .menu-btn[aria-disabled="true"]{
+    opacity:.38;
+    cursor:not-allowed;
+    filter: grayscale(.4);
+    }
+
+    /* placeholder if shelf missing */
+    .menu-placeholder {
+    background: rgba(255,255,255,0.02);
+    border-radius:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#888;
+    font-size:0.85rem;
+    }
+
+    /* bottom area pinned */
+    .menu-bottom {
+    flex: 0 0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    padding-top:6px;
+    padding-bottom:40px;
+    border-top: 1px solid rgba(255,255,255,0.02);
+    }
+
+    /* Slight responsive shrink */
+    @media (max-width:480px){
+    .menu-grid { grid-template-rows: 80px 80px 80px; gap:8px; }
+    .menu-btn { font-size:0.8rem; padding:8px; border-radius:8px; }
+    }
+
+
+    .red-checkbox input[type="checkbox"] {
+      width:20px; height:20px; accent-color: #ff4d4f; /* modern browsers */
+      border-radius:4px;
+      cursor:pointer;
+    }
+    .red-checkbox label { color:#ffb3b6; font-weight:600; }
+
+    /* small helper for placeholders when fewer than 6 shelves exist */
+    .menu-placeholder {
+      background: rgba(255,255,255,0.02);
+      border: 1px dashed rgba(255,255,255,0.03);
+      color:#888;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+      padding:10px;
+    }
+
+    @media (max-width:480px){
+      #slideMenu { width: 86%; }
+      #menuToggle { padding: 6px 10px; top: 10px; right: 10px; }
+    }
   </style>
 </head>
 <body>
@@ -30,34 +220,60 @@
     <div class="swiper-scrollbar"></div>
   </div>
 
-  <!-- Swiper + CryptoJS (make sure this BootCDN link works for you) -->
+  <!-- Menu toggle button -->
+  <button id="menuToggle" aria-expanded="false" aria-controls="slideMenu">Shelves</button>
+
+  <!-- Overlay (click to close) -->
+  <div id="menuOverlay" role="presentation"></div>
+
+  <!-- Slide-in menu -->
+  <aside id="slideMenu" aria-hidden="true">
+    <div class="menu-header">
+      <span>IRL Layout</span>
+      <button id="menuClose" aria-label="Close menu" style="background:none;border:none;color:#ffe4f0;cursor:pointer;font-weight:700">✕</button>
+    </div>
+
+    <!-- Grid of 2x3 buttons -->
+    <div class="menu-grid" id="menuGrid" aria-hidden="false">
+      <!-- Buttons will be inserted here by JS  -->
+    </div>
+
+    <!-- Bottom row: red checkbox that toggles presence of two H-shelf options -->
+    <div class="menu-bottom">
+      <div class="red-checkbox">
+        <input type="checkbox" id="hShelfToggle" />
+        <label for="hShelfToggle">H</label>
+      </div>
+      <div style="opacity:.6;font-size:.9rem;color:#ccc">toggle H shelves</div>
+    </div>
+  </aside>
+
   <script src="https://unpkg.com/swiper@9/swiper-bundle.min.js"></script>
-  <!--if decryption with right password fails, check if the link below is still valid-->
   <script src="https://cdn.bootcdn.net/ajax/libs/crypto-js/4.2.0/crypto-js.js"></script>
 
   <script>
-    // global swiper instance
+    // ====== your original variables & functions largely preserved ======
     let swiperInstance = null;
 
-    // decryption program on recieved data from app script
-    async function init() {
-      // ask for password (empty => assume server returns plain JSON)
-      const password = prompt("Enter decryption password:");
+    // store fetched raw shelves array so we can rebuild the <select> as needed
+    window._shelvesData = [];
+    // store references to generated menu buttons for enabling/disabling later
+    window._menuButtons = [];
+    // which shelf names should be removed when checkbox is unchecked
+    const H_SHELF_NAMES = ['H shelf L BKS', 'H shelf R BKS'];
 
+    async function init() {
+      const password = prompt("Enter decryption password, loading takes ~6sec");
       const endpoint = 'https://script.google.com/macros/s/AKfycbxSB9XqE1I8w1KVfeSUmNPGWisZ6BfqYd_NT_7OxNnkyO-NmOkgqSvii2bPnLjSQNx-qA/exec';
       const resp = await fetch(endpoint + (password ? '?password=' + encodeURIComponent(password) : ''));
-
       if (!resp.ok) { alert('Failed to fetch data: ' + resp.statusText); return; }
-
       const text = (await resp.text()).trim();
 
       let data = null;
-      // Try to parse plain JSON first (server fallback)
       try {
         if (text.startsWith('{') || text.startsWith('[')) data = JSON.parse(text);
         else throw new Error('Not JSON');
       } catch (e) {
-        // Attempt CryptoJS AES decrypt if text is ciphertext
         if (!password) { alert('Server response appears encrypted; reload and provide password.'); return; }
         try {
           const bytes = CryptoJS.AES.decrypt(text, password);
@@ -77,45 +293,247 @@
         return;
       }
 
+      // Keep raw data globally accessible
+      window._shelvesData = data.slice(); // copy
       populateShelves(data);
     }
 
+    // replaces previous populateShelves but still uses renderSlides for display
     function populateShelves(shelves) {
+      // keep raw copy
+      window._shelvesData = shelves.slice();
+      // we build UI based on checkbox state in refreshShelvesUI
+      refreshShelvesUI();
+      // also (re)build the menu grid (buttons mapped to original indices)
+      buildMenuButtons();
+    }
+
+    // Rebuild the <select> according to the current checkbox state
+    function refreshShelvesUI() {
       const sel = document.getElementById('shelfSelect');
       sel.innerHTML = '';
 
-      if (shelves.length === 0) {
+      const showH = document.getElementById('hShelfToggle')?.checked ?? true;
+      const shelves = window._shelvesData || [];
+
+      const filtered = shelves.map((s, idx) => ({s, idx})).filter(({s}) => {
+        if (!s) return true;
+        const name = s.shelf || '';
+        if (!showH && H_SHELF_NAMES.includes(name)) return false; // remove if H-shelf and we're hiding them
+        return true;
+      });
+
+      if (filtered.length === 0) {
         const opt = document.createElement('option');
         opt.text = 'No shelves found';
         opt.value = '';
         sel.appendChild(opt);
-        renderSlides([]); // will show only placeholders
+        renderSlides([]); // will show placeholders
         return;
       }
 
-      // use index values for options (consistent with V2)
-      shelves.forEach((s, idx) => {
+      filtered.forEach(({s, idx}) => {
         const o = document.createElement('option');
-        o.value = String(idx);
+        o.value = String(idx); // keep original index as value
         o.text = s.shelf || `Shelf ${idx+1}`;
         sel.appendChild(o);
       });
 
       sel.onchange = () => {
         const idx = Number(sel.value);
-        const items = (shelves[idx] && Array.isArray(shelves[idx].items)) ? shelves[idx].items : [];
+        const items = (window._shelvesData[idx] && Array.isArray(window._shelvesData[idx].items)) ? window._shelvesData[idx].items : [];
         renderSlides(items);
       };
 
+      // select first available option
       sel.selectedIndex = 0;
       sel.onchange();
+
+      // after rebuilding the select, update menu button enable/disable states
+      updateMenuButtonStates();
+    }
+
+    // simple map name -> index (exact match)
+    function buildNameIndexMap(){
+    const map = {};
+    (window._shelvesData || []).forEach((s, i) => {
+        if (s && typeof s.shelf === 'string') map[s.shelf.trim()] = i;
+    });
+    return map;
+    }
+
+    // helper: find indices (not already reserved) where shelf.shelf contains ALL words in keyword (case-insensitive)
+    function findShelvesByKeyword(keyword, count = 1, reserved = new Set()){
+    const words = (keyword||'').toLowerCase().split(/\s+/).filter(Boolean);
+    const results = [];
+    const data = window._shelvesData || [];
+    for (let i=0; i<data.length && results.length < count; i++){
+        if (reserved.has(i)) continue;
+        const name = (data[i] && data[i].shelf) ? data[i].shelf.toLowerCase() : '';
+        let ok = true;
+        for (const w of words){
+        if (!name.includes(w)) { ok = false; break; }
+        }
+        if (ok) results.push(i);
+    }
+    return results;
+    }
+
+    // main builder: constructs fixed 2x3 grid where some cells contain split groups
+    function buildMenuButtons(){
+    const grid = document.getElementById('menuGrid');
+    grid.innerHTML = '';
+    window._menuButtons = [];
+    const shelves = window._shelvesData || [];
+    const reserved = new Set();
+
+    // compute exact name -> index map
+    const nameIndex = buildNameIndexMap();
+
+    // Map of desired buttons (8 total). Same as before.
+    const mapping = {
+        topLeft:    [{label:'Glass display', keyword:'glass display', count:1}],
+        topRight:   [],
+        midLeft:    [{label:'Wooden cupboard B', keyword:'wooden cupboard back'},
+                    {label:'Wooden cupboard F', keyword:'wooden cupboard front'}],
+        midRight:   [{label:'Display shelf', keyword:'display shelf'}],
+        botLeft:    [{label:'H shelf L', keyword:'H shelf L'},
+                    {label:'H shelf R', keyword:'H shelf R'}],
+        botRight:   [{label:'Display cupbrd. L', keyword:'display cupboard L'},
+                    {label:'Display cupbrd. R', keyword:'display cupboard R'}]
+    };
+
+    // helper to create a button element bound to a shelf index (or disabled if not found)
+    function createBtn(label, foundIndex){
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'menu-btn';
+        btn.textContent = label;
+        if (typeof foundIndex === 'number'){
+        btn.setAttribute('data-idx', String(foundIndex));
+        btn.addEventListener('click', () => {
+            const sel = document.getElementById('shelfSelect');
+            const opt = Array.from(sel.options).find(o => Number(o.value) === foundIndex);
+            if (opt){
+            sel.value = String(foundIndex);
+            sel.onchange && sel.onchange();
+            }
+        });
+        } else {
+        btn.classList.add('disabled');
+        btn.setAttribute('aria-disabled','true');
+        }
+        window._menuButtons.push(btn);
+        return btn;
+    }
+
+    // convenience: try exact name first, fallback to fuzzy search
+    function findIndexForLabel(label, fuzzyKeyword, reserveSet){
+        // exact by label (most deterministic)
+        if (nameIndex[label] !== undefined && !reserveSet.has(nameIndex[label])) return nameIndex[label];
+        // try fuzzy match using your existing helper
+        const found = findShelvesByKeyword(fuzzyKeyword || label, 1, reserveSet);
+        if (found && found.length) return found[0];
+        // last fallback: next unused index
+        for (let j=0;j<shelves.length;j++) if (!reserveSet.has(j)) return j;
+        return undefined;
+    }
+
+    // --- top-left cell (Glass display) ---
+    const cellTopLeft = document.createElement('div'); cellTopLeft.className='grid-cell';
+    let idx = findIndexForLabel(mapping.topLeft[0].label, mapping.topLeft[0].keyword, reserved);
+    if (typeof idx === 'number') reserved.add(idx);
+    cellTopLeft.appendChild(createBtn(mapping.topLeft[0].label, idx));
+    cellTopLeft.style.gridColumn = '1'; cellTopLeft.style.gridRow = '1';
+    grid.appendChild(cellTopLeft);
+
+    // --- top-right empty placeholder ---
+    const cellTopRight = document.createElement('div'); cellTopRight.className='grid-cell';
+    cellTopRight.style.gridColumn = '2'; cellTopRight.style.gridRow = '1';
+    grid.appendChild(cellTopRight);
+
+    // --- mid-left: two stacked wooden cupboard buttons ---
+    const cellMidLeft = document.createElement('div'); cellMidLeft.className='grid-cell';
+    const splitH = document.createElement('div'); splitH.className='split-horizontal';
+    for (let i=0;i<2;i++){
+        const label = mapping.midLeft[i].label;
+        const keyword = mapping.midLeft[i].keyword;
+        const fIdx = findIndexForLabel(label, keyword, reserved);
+        if (typeof fIdx === 'number') reserved.add(fIdx);
+        splitH.appendChild(createBtn(label, fIdx));
+    }
+    cellMidLeft.appendChild(splitH);
+    cellMidLeft.style.gridColumn='1'; cellMidLeft.style.gridRow='2';
+    grid.appendChild(cellMidLeft);
+
+    // --- mid-right: Display shelf single ---
+    const cellMidRight = document.createElement('div'); cellMidRight.className='grid-cell';
+    const dsLabel = mapping.midRight[0].label;
+    const dsIdx = findIndexForLabel(dsLabel, mapping.midRight[0].keyword, reserved);
+    if (typeof dsIdx === 'number') reserved.add(dsIdx);
+    cellMidRight.appendChild(createBtn(dsLabel, dsIdx));
+    cellMidRight.style.gridColumn='2'; cellMidRight.style.gridRow='2';
+    grid.appendChild(cellMidRight);
+
+    // --- bottom-left: H shelf split vertically ---
+    const cellBotLeft = document.createElement('div'); cellBotLeft.className='grid-cell';
+    const splitV1 = document.createElement('div'); splitV1.className='split-vertical';
+    // H shelf L
+    const hLIdx = findIndexForLabel(mapping.botLeft[0].label, mapping.botLeft[0].keyword, reserved);
+    if (typeof hLIdx === 'number') reserved.add(hLIdx);
+    // H shelf R
+    const hRIdx = findIndexForLabel(mapping.botLeft[1].label, mapping.botLeft[1].keyword, reserved);
+    if (typeof hRIdx === 'number') reserved.add(hRIdx);
+    splitV1.appendChild(createBtn(mapping.botLeft[0].label, hLIdx));
+    splitV1.appendChild(createBtn(mapping.botLeft[1].label, hRIdx));
+    cellBotLeft.appendChild(splitV1);
+    cellBotLeft.style.gridColumn='1'; cellBotLeft.style.gridRow='3';
+    grid.appendChild(cellBotLeft);
+
+    // --- bottom-right: Display cupboard split vertically ---
+    const cellBotRight = document.createElement('div'); cellBotRight.className='grid-cell';
+    const splitV2 = document.createElement('div'); splitV2.className='split-vertical';
+    for (let i=0;i<2;i++){
+        const label = mapping.botRight[i].label;
+        const keyword = mapping.botRight[i].keyword;
+        const fIdx = findIndexForLabel(label, keyword, reserved);
+        if (typeof fIdx === 'number') reserved.add(fIdx);
+        splitV2.appendChild(createBtn(label, fIdx));
+    }
+    cellBotRight.appendChild(splitV2);
+    cellBotRight.style.gridColumn='2'; cellBotRight.style.gridRow='3';
+    grid.appendChild(cellBotRight);
+
+    // Finalize
+    updateMenuButtonStates();
+    }
+
+
+
+    // Enable/disable menu buttons that correspond to hidden H-shelves
+    function updateMenuButtonStates(){
+      const showH = document.getElementById('hShelfToggle')?.checked ?? true;
+      const shelves = window._shelvesData || [];
+
+      window._menuButtons.forEach((btn) => {
+        const origIdx = Number(btn.getAttribute('data-idx'));
+        const s = shelves[origIdx];
+        const name = s && s.shelf ? s.shelf : '';
+        // If the name is in H_SHELF_NAMES and the H shelves are hidden, disable the button
+        if (H_SHELF_NAMES.includes(name) && !showH) {
+          btn.classList.add('disabled');
+          btn.setAttribute('aria-disabled','true');
+        } else {
+          btn.classList.remove('disabled');
+          btn.removeAttribute('aria-disabled');
+        }
+      });
     }
 
     function renderSlides(items) {
       const container = document.getElementById('slides');
       container.innerHTML = '';
 
-      // Add real book slides first
       items.forEach(i => {
         const slide = document.createElement('div');
         slide.className = 'swiper-slide';
@@ -133,10 +551,7 @@
         container.appendChild(slide);
       });
 
-
-       // number of placeholder slides to append (same visual behavior as V1)
       const PLACEHOLDER_COUNT = 6;
-      // Re-introduce placeholders (same visual purpose as V1)
       for (let p = 0; p < PLACEHOLDER_COUNT; p++) {
         const placeholder = document.createElement('div');
         placeholder.className = 'swiper-slide';
@@ -149,17 +564,26 @@
         container.appendChild(placeholder);
       }
 
-      // Destroy existing swiper instance (if any) to avoid multiple instances
       if (swiperInstance) {
         try { swiperInstance.destroy(true, true); } catch (e) { console.warn('destroy failed', e); }
         swiperInstance = null;
       }
 
-      // Initialize Swiper and restore the responsive breakpoints from V1
       swiperInstance = new Swiper('.swiper', {
+        effect: "coverflow",
         loop: false,
         slidesPerView: 1,
         spaceBetween: 20,
+        freeMode: true,
+        grabCursor: true,
+        centeredSlides: true,
+        coverflowEffect: {
+          rotate: 20,
+          stretch: 0,
+          depth: 100,
+          modifier: 1,
+          slideShadows: true,
+        },
         navigation: {
           nextEl: '.swiper-button-next',
           prevEl: '.swiper-button-prev'
@@ -167,11 +591,51 @@
         breakpoints: {
           640: { slidesPerView: 2, spaceBetween: 30 },
           1024: { slidesPerView: 3, spaceBetween: 40 }
+        },
+        scrollbar: {
+          el:".swiper-scrollbar",
+          hide: false,
+          draggable: true,
+          snapOnRelease: true,
         }
       });
     }
 
-    // kick off
+    // ====== Menu open/close behavior & checkbox wiring ======
+    const menuToggle = document.getElementById('menuToggle');
+    const menu = document.getElementById('slideMenu');
+    const menuOverlay = document.getElementById('menuOverlay');
+    const menuClose = document.getElementById('menuClose');
+    const hShelfToggle = document.getElementById('hShelfToggle');
+
+    function openMenu(){
+      menu.classList.add('open');
+      menu.setAttribute('aria-hidden','false');
+      menuToggle.setAttribute('aria-expanded','true');
+      menuOverlay.classList.add('visible');
+    }
+    function closeMenu(){
+      menu.classList.remove('open');
+      menu.setAttribute('aria-hidden','true');
+      menuToggle.setAttribute('aria-expanded','false');
+      menuOverlay.classList.remove('visible');
+    }
+
+    menuToggle.addEventListener('click', () => {
+      if (menu.classList.contains('open')) closeMenu();
+      else openMenu();
+    });
+    menuClose.addEventListener('click', closeMenu);
+    menuOverlay.addEventListener('click', closeMenu);
+
+    // Checkbox default: unchecked by requirement
+    hShelfToggle.checked = false;
+    hShelfToggle.addEventListener('change', () => {
+      // rebuild select (removes or restores the two H-shelf options)
+      refreshShelvesUI();
+    });
+
+    // Kick off data fetch & UI build
     init();
   </script>
 </body>
