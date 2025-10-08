@@ -41,7 +41,7 @@
       top: 0;
       right: 0;
       bottom: 0;               /* <- important: stretch to actual viewport bottom */
-      width: 350px;
+      width: 350px;  /* <-change this value if there is weird text wrapping in the menu buttons */
       max-width: 85%;
       /* don't use height:100vh; instead let the browser calculate using top/bottom */
       background: linear-gradient(180deg,#1f1f2a,#15151a);
@@ -79,7 +79,7 @@
     .menu-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;          /* 2 columns */
-    grid-template-rows: 94px 94px 94px;      /* 3 rows (small so all fits on viewport) */
+    grid-template-rows: 94px 94px 94px 94px;      /* 4 rows (small so all fits on viewport) */  /* ((Part 1 of adding new button!! add one more row here)) */
     gap: 10px;
     /* no scrolling: the grid is sized to fit inside the menu */
     flex: 1 1 auto; /* take remaining vertical space between header & bottom */
@@ -166,7 +166,7 @@
 
     /* Slight responsive shrink */
     @media (max-width:480px){
-    .menu-grid { grid-template-rows: 80px 80px 80px; gap:8px; }
+    .menu-grid { grid-template-rows: 80px 80px 80px 80px; gap:8px; }   /* ((Part 2 of adding new button!! Also add another row here!)) */
     .menu-btn { font-size:0.8rem; padding:8px; border-radius:8px; }
     }
 
@@ -386,7 +386,9 @@
         botLeft:    [{label:'H shelf L', keyword:'H shelf L'},
                     {label:'H shelf R', keyword:'H shelf R'}],
         botRight:   [{label:'Display cupbrd. L', keyword:'display cupboard L'},
-                    {label:'Display cupbrd. R', keyword:'display cupboard R'}]
+                    {label:'Display cupbrd. R', keyword:'display cupboard R'}],
+        botbotLeft: [{label:'Wooden cupboard GroundF', keyword:'Wooden cupboard bottom'}],    // ((Part 3 of adding new button!!, add its list data))
+        botbotRight:[]                
     };
 
     // helper to create a button element bound to a shelf index (or disabled if not found)
@@ -489,6 +491,20 @@
     cellBotRight.appendChild(splitV2);
     cellBotRight.style.gridColumn='2'; cellBotRight.style.gridRow='3';
     grid.appendChild(cellBotRight);
+
+    // --- botbot-left cell (Glass display) ---   ((Part 4 of adding new button!! Add these for the new button!))
+    const cellbotbotLeft = document.createElement('div'); cellbotbotLeft.className='grid-cell';
+    const bblLabel = mapping.botbotLeft[0].label;  //need change botbotLeft to get right button label
+    const bblIdx = findIndexForLabel(bblLabel, mapping.botbotLeft[0].keyword, reserved);  //need change botbotLeft to get right function
+    if (typeof bblIdx === 'number') reserved.add(bblIdx);
+    cellbotbotLeft.appendChild(createBtn(bblLabel, bblIdx));
+    cellbotbotLeft.style.gridColumn='1'; cellbotbotLeft.style.gridRow='4';
+    grid.appendChild(cellbotbotLeft);
+
+    // --- botbot-right empty placeholder ---
+    const cellbotbotRight = document.createElement('div'); cellbotbotRight.className='grid-cell';
+    cellbotbotRight.style.gridColumn = '2'; cellbotbotRight.style.gridRow = '4';
+    grid.appendChild(cellbotbotRight);
 
     // Finalize
     updateMenuButtonStates();
