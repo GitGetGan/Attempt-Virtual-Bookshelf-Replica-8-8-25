@@ -234,11 +234,7 @@
     
     #menuOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.45); opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 1050; }
     #menuOverlay.visible { opacity: 1; pointer-events: auto; }
-    
-    @media (max-width: 480px) {
-      .menu-grid { grid-template-columns: 1fr; grid-auto-rows: 80px; } 
-      .split-horizontal { flex-direction: column; }
-    }
+
   </style>
 </head>
 
@@ -510,8 +506,7 @@
           slide.innerHTML = `
             <div class="book-display">
                 <img src="${i.cover || 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs='}" 
-                     alt="${i.title}" 
-                     loading="lazy"
+                     alt="${i.title}"
                      onerror="this.onerror=null;this.src='https://placehold.co/280x380/303030/999999?text=Cover+Not+Found'">
             </div>
             <p>${i.title || 'Untitled'}</p>
